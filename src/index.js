@@ -1,80 +1,57 @@
+import React, { Component } from 'react'
+import PropTypes from 'prop-types'
+import ReactDOM from 'react-dom'
+import Header from './Header'
+import Content from './Content'
+import './index.css'
 
-const appState = {
-  title: {
-    text: 'React.js 小书',
-    color: 'red',
-  },
-  content: {
-    text: 'React.js 小书内容',
-    color: 'blue'
-  }
-}
-
-function renderApp (newAppState, oldAppState = {}) {
-  if (newAppState === oldAppState) return
-  console.log('render app...')
-  renderTitle(newAppState.title, oldAppState.title)
-  renderContent(newAppState.content, oldAppState.content)
-}
-
-function renderTitle (newTitle, oldTitle = {}) {
-  if (newTitle === oldTitle) return
-  console.log('render title...')
-  const titleDOM = document.getElementById('title')
-  titleDOM.innerHTML = newTitle.text
-  titleDOM.style.color = newTitle.color
-}
-
-function renderContent (newContent, oldContent = {}) {
-  if (newContent === oldContent) return
-  console.log('render content...')
-  const contentDOM = document.getElementById('content')
-  contentDOM.innerHTML = newContent.text
-  contentDOM.style.color = newContent.color
-}
-
-function createStore (state, stateChanger) {
+function createStore (reducer) {
+  let state = null
   const listeners = []
   const subscribe = (listener) => listeners.push(listener)
   const getState = () => state
   const dispatch = (action) => {
-    state = stateChanger(state, action)
+    state = reducer(state, action)
     listeners.forEach((listener) => listener())
   }
-  return { getState, dispatch, subscribe }
+  dispatch({})
+  return {getState, dispatch, subscribe}
 }
 
-function stateChanger (state, action) {
+const themeReducer = (state, action) => {
+  if (!state) return {
+    themeColor: 'red'
+  }
   switch (action.type) {
-    case 'UPDATE_TITLE_TEXT':
-      return { // 构建新的对象并且返回
-        ...state,
-        title: {
-          ...state.title,
-          text: action.text
-        }
-      }
-    case 'UPDATE_TITLE_COLOR':
-      return {
-        ...state,
-        title: {
-          ...state.title,
-          color: action.color
-        }
-      }
-    default:
-      return state // 没有修改,返回原来的对象
+    case 'CHANGE_COLOR':
+      return {...state, themeColor: action.themeColor}
+    default: 
+      return state
   }
 }
 
-const store = createStore(appState, stateChanger)
-let oldState = store.getState()
-store.subscribe(() => {
-  const newState = store.getState() // 数据可能变化，获取新的 state
-  renderApp(newState, oldState) // 把新旧的 state 传进去渲染
-  oldState = newState
-})
+const store = createStore(themeReducer)
 
-renderApp(store.getState())
-store.dispatch({type: 'UPDATE_TITLE_TEXT', text: '《React.js 小书》'})
-store.dispatch({type: 'UPDATE_TITLE_COLOR', color: 'yellow'})
+class Index extends Component {
+  static childContextTypes = {
+    store: PropTypes.object
+  }
+
+  getChildContext () {
+    return {store}
+  }
+
+  render () {
+    return (
+      <div>
+        <Header />
+        <Content />
+      </div>
+    )
+  }
+}
+
+ReactDOM.render(
+  <Index />,
+  document.getElementById('root')
+)
